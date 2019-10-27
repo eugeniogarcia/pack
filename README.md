@@ -9,53 +9,15 @@ Hacemos login:
 docker login www.gz.com:5000
 ```
 
-descargamos los Builders y la run image:  
+Vamos a usar este builder:
 ´´´
-docker pull cloudfoundry/cnb:bionic 
-docker pull cloudfoundry/run:base-cnb
-```
+pack inspect-builder cnbs/sample-builder:bionic 
 
-Les ponemos un tag:  
-```
-docker tag cloudfoundry/cnb:bionic www.gz.com:5000/cloudfoundry/cnb:bionic 
-docker tag cloudfoundry/run:base-cnb www.gz.com:5000/cloudfoundry/run:base-cnb 
-```
 
-Vamos a subirlos a nuestro registry local:  
-```
-docker push www.gz.com:5000/cloudfoundry/cnb:bionic 
-docker push www.gz.com:5000/cloudfoundry/run:base-cnb 
-```
-# El Builder
-Inspeccionamos el builder:  
-```
-pack inspect-builder cloudfoundry/cnb:bionic
-pack inspect-builder www.gz.com:5000/cloudfoundry/cnb:bionic
-```
+Remote
+------
 
-Podemos especificar el builder por defecto:  
-```
-pack set-default-builder www.gz.com:5000/cloudfoundry/cnb:bionic
-```
-
-Podemsos configurar un mirror para nuestro run image:
-```
-pack set-run-image-mirrors cloudfoundry/run:base-cnb --mirror www.gz.com:5000/cloudfoundry/run:base-cnb 
-```
-
-Si ahora inspeccionamos nuestro builder:
-´´´
-pack inspect-builder www.gz.com:5000/cloudfoundry/cnb:bionic
-```
-
-Podemos observar:  
-```
-Local
------
-
-Description: Ubuntu bionic base image with buildpacks for Java, NodeJS and Golang
-
-Stack: io.buildpacks.stacks.bionic
+Stack: io.buildpacks.samples.stacks.bionic
 
 Lifecycle:
   Version: 0.4.0
@@ -63,12 +25,74 @@ Lifecycle:
   Platform API: 0.1
 
 Run Images:
-  www.gz.com:5000/cloudfoundry/run:base-cnb (user-configured)
-  cloudfoundry/run:base-cnb
-  
-...
+  cnbs/sample-stack-run:bionic
+
+Buildpacks:
+  ID                                         VERSION
+  io.buildpacks.samples.java-maven           0.0.1
+  io.buildpacks.samples.kotlin-gradle        0.0.1
+  io.buildpacks.samples.ruby-bundler         0.0.1
+
+Detection Order:
+  Group #1:
+    io.buildpacks.samples.java-maven@0.0.1
+  Group #2:
+    io.buildpacks.samples.kotlin-gradle@0.0.1
+  Group #3:
+    io.buildpacks.samples.ruby-bundler@0.0.1
+
+Local
+-----
+
+Not present
 ```
 
+Podemos ver que run imagen usa. Vamos a descargar los Builders y la run image:  
+´´´
+docker pull cnbs/sample-builder:bionic 
+docker pull cnbs/sample-stack-run:bionic
+```
+
+Les ponemos un tag:  
+```
+docker tag cnbs/sample-builder:bionic www.gz.com:5000/cnbs/sample-builder:bionic 
+docker tag cnbs/sample-stack-run:bionic www.gz.com:5000/cnbs/sample-stack-run:bionic 
+```
+
+Vamos a subirlos a nuestro registry local:  
+```
+docker push www.gz.com:5000/cnbs/sample-builder:bionic 
+docker push www.gz.com:5000/cnbs/sample-stack-run:bionic 
+```
+# El Builder
+Inspeccionamos el builder:  
+```
+pack inspect-builder www.gz.com:5000/cnbs/sample-builder:bionic 
+```
+
+Podemos especificar el builder por defecto:  
+```
+pack set-default-builder www.gz.com:5000/cnbs/sample-builder:bionic 
+```
+
+Podemsos configurar un mirror para nuestro run image:
+```
+pack set-run-image-mirrors cnbs/sample-stack-run:bionic --mirror www.gz.com:5000/cnbs/sample-stack-run:bionic 
+```
+
+Al especificar el mirror, si hicieramos:
+```
+pack inspect-builder www.gz.com:5000/cnbs/sample-builder:bionic
+```
+
+Veriamos:
+```
+Run Images:
+  www.gz.com:5000/cnbs/sample-stack-run:bionic (user-configured)
+  cnbs/sample-stack-run:bionic
+
+```
+  
 # Crear una imagen
 Podriamos hacer simplemente:  
 
@@ -78,19 +102,15 @@ pack build aplicacion
 
 Seria equivalente a:
 ```
-pack build aplicacion --builder www.gz.com:5000/cloudfoundry/cnb:bionic 
+pack build aplicacion --builder www.gz.com:5000/cnbs/sample-builder:bionic
 ```
 
 Podemos tambien publicar la imagen con pack:
 ```
-pack build aplicacion --builder www.gz.com:5000/cloudfoundry/cnb:bionic www.gz.com:5000/app:latest -publish
+pack build aplicacion --builder www.gz.com:5000/cnbs/sample-builder:bionic --publish
 ```
 
-
-
-
-
-
-
-
+Podemos ver ahora la imagen resultante:
+```
 docker inspect-image aplicacion --bom | jq .Remote
+```
